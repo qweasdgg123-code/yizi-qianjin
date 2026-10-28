@@ -993,7 +993,7 @@ function parseCSV(t){
 }
 const YIN_RE = /^[\u3400-\u9fff]*「[\u3400-\u9fff]」[\u3400-\u9fff]*$/;
 function setBankNote(src){
-  $("bankNote").textContent = `題庫：${src}（錯別字 ${PAIRS.length} 組、讀音 ${YIN.length} 題）`;
+  $("bankNote").textContent = `題庫：錯別字${PAIRS.length}題、讀音${YIN.length}題`;
 }
 async function loadSheets(){
   const ctl = new AbortController();
