@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}</style>
+<title>一字千金大考驗</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&family=LXGW+WenKai+TC:wght@400;700&display=swap">
+<style>
+/* 版面：方格筆記紙上的一張考卷卡，粉紅緞帶標題，直排大字題目，上方兩個選項格 */
+:root{
+  color-scheme: light;
+  --paper:#f7f8f3;
+  --grid:#dfe6dc;
+  --ink:#4a4b4d;
+  --ink-soft:#8a8d90;
+  --ribbon:#d8559a;
+  --ribbon-deep:#a8357a;
+  --red:#e0605c;
+  --teal:#3fa3ad;
+  --good:#3aa66a;
+  --bar:#3fd27a;
+  --star:#f4c64e;
+  --star-deep:#e09a1c;
+  --card:#ffffff;
+  --display:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --hand:"LXGW WenKai TC","Kaiti TC","DFKai-SB",serif;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:22px 22px;
+  color:var(--ink);
+  font-family:var(--hand);
+  font-size:16px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:20px 28px;
+  box-sizing:border-box;
+}
+.wrap{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:18px;align-items:stretch}
+
+/* 緞帶標題 */
+.ribbon{position:relative;align-self:center;margin-top:6px}
+.ribbon h1{
+  position:relative;z-index:1;margin:0;
+  background:var(--ribbon);color:#fff;
+  font-family:var(--display);font-weight:900;font-size:clamp(22px,6vw,28px);
+  letter-spacing:.08em;padding:10px 28px;border-radius:6px;
+  box-shadow:0 3px 0 var(--ribbon-deep);
+  text-wrap:balance;
+}
+.ribbon::before,.ribbon::after{
+  content:"";position:absolute;top:12px;width:34px;height:100%;
+  background:var(--ribbon-deep);z-index:0;
+}
+.ribbon::before{left:-20px;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,30% 50%)}
+.ribbon::after{right:-20px;clip-path:polygon(0 0,100% 0,70% 50%,100% 100%,0 100%)}
+
+/* 狀態列 */
+.status{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.timer-label{font-size:17px;text-align:center}
+.timer-label b{font-family:var(--display);color:var(--red);font-size:24px;margin:0 4px;font-variant-numeric:tabular-nums}
+.bar{height:16px;border-radius:9px;background:#cfd8cc;overflow:hidden;border:2px solid #b8c3b4}
+.bar i{display:block;height:100%;width:100%;background:var(--bar);transform-origin:left;}
+.qno{
+  grid-row:1 / span 2;grid-column:2;
+  width:58px;height:58px;border-radius:50%;
+  border:2px solid var(--ink-soft);background:var(--card);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  line-height:1.1;font-size:13px;
+}
+.qno b{font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.score{display:flex;justify-content:center;gap:22px;font-size:16px}
+.score span b{font-family:var(--display);font-variant-numeric:tabular-nums;margin-left:4px}
+.score .ok b{color:var(--good)} .score .ng b{color:var(--red)}
+
+#quizView{display:flex;flex-direction:column;gap:16px}
+/* 選項 */
+.options{display:flex;justify-content:center;gap:14px;margin-block:6px}
+.opt{
+  font-family:var(--display);font-weight:900;
+  font-size:clamp(48px,14vw,64px);line-height:1;
+  width:1.4em;height:1.4em;
+  background:var(--card);color:var(--ink);
+  border:5px solid var(--red);border-radius:12px;
+  box-shadow:0 4px 0 rgba(0,0,0,.12);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:transform .12s ease, background .15s ease;
+  padding:0;
+}
+.opt.multi{font-size:clamp(30px,9vw,40px);width:auto;min-width:2.4em;padding:0 .3em}
+.opt:nth-child(2){border-color:var(--teal)}
+.opt:hover:not(:disabled){transform:translateY(-3px)}
+.opt:active:not(:disabled){transform:translateY(1px)}
+.opt:focus-visible{outline:3px dashed var(--ribbon);outline-offset:4px}
+.opt:disabled{cursor:default}
+.opt.right{background:#dff4e6;border-color:var(--good)}
+.opt.wrong{background:#fde3e1;border-color:var(--red);opacity:.85}
+
+/* 直排題目 */
+.word{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:220px;justify-content:center}
+.ch{
+  font-family:var(--display);font-weight:900;
+  font-size:clamp(54px,16vw,76px);line-height:1.1;color:var(--ink);
+  width:1.2em;height:1.2em;display:flex;align-items:center;justify-content:center;
+}
+.ch.blank{border:4px dashed var(--ink-soft);border-radius:10px;color:var(--ink-soft);font-size:clamp(34px,10vw,46px)}
+.ch.blank.filled{border-style:solid;font-size:clamp(54px,16vw,76px)}
+.ch.blank.filled.good{border-color:var(--good);color:var(--good)}
+.ch.blank.filled.bad{border-color:var(--red);color:var(--red)}
+
+.hint{
+  align-self:center;background:#fff3b8;border:2px solid #e8cf5a;border-radius:6px;
+  padding:6px 16px;font-size:16px;min-height:1.4em;text-align:center
+}
+.hint.good{background:#dff4e6;border-color:var(--good)}
+.hint.bad{background:#fde3e1;border-color:var(--red)}
+
+/* 開始／結果卡 */
+.card{
+  background:var(--card);border:2px solid #d9ddd5;border-radius:14px;
+  padding:22px 20px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;
+  box-shadow:0 4px 0 rgba(0,0,0,.06);
+}
+.card h2{margin:0;font-family:var(--display);font-weight:900;font-size:24px;text-wrap:balance}
+.card p{margin:0;line-height:1.7;max-width:34ch}
+.rules{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;text-align:left;font-size:16px}
+.rules li::before{content:"✎";color:var(--ribbon);margin-right:8px}
+.stars-legend{display:grid;grid-template-columns:auto auto;gap:4px 14px;font-size:15px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.stars-legend span:nth-child(odd){text-align:right}
+.btn{
+  font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.1em;
+  background:var(--ribbon);color:#fff;border:0;border-radius:999px;
+  padding:12px 34px;cursor:pointer;box-shadow:0 4px 0 var(--ribbon-deep);
+}
+.btn-ghost{
+  align-self:center;font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:.08em;
+  background:var(--card);color:var(--ribbon-deep);border:2px solid var(--ribbon);border-radius:999px;
+  padding:8px 22px;cursor:pointer;
+}
+.btn-ghost:hover{background:#fbe6f1}
+.btn-ghost:focus-visible{outline:3px dashed var(--teal);outline-offset:4px}
+.mute{
+  align-self:flex-end;margin-bottom:-10px;
+  font-family:var(--display);font-weight:700;font-size:13px;
+  background:var(--card);color:var(--ink);border:2px solid #d9ddd5;border-radius:999px;
+  padding:6px 12px;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.06)
+}
+.mute[aria-pressed="true"]{color:var(--ink-soft);background:#eef0ec}
+.mute:focus-visible{outline:3px dashed var(--teal);outline-offset:3px}
+/* 首頁選擇 */
+.home p{margin:0}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%}
+.mode-card{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:var(--card);color:var(--ink);border:3px solid var(--red);border-radius:14px;
+  padding:16px 8px 14px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.1);font-family:var(--hand);
+  transition:transform .12s ease
+}
+.mode-card.alt{border-color:var(--teal)}
+.mode-card:hover{transform:translateY(-3px)}
+.mode-card:active{transform:translateY(1px)}
+.mode-card:focus-visible{outline:3px dashed var(--ribbon);outline-offset:4px}
+.mode-card b{
+  order:-1;align-self:stretch;margin:-16px -8px 4px;padding:10px 6px;
+  background:var(--red);color:#fff;border-radius:10px 10px 0 0;
+  font-family:var(--display);font-weight:900;font-size:clamp(19px,5.6vw,24px);letter-spacing:.06em;line-height:1.2
+}
+.mode-card.alt b{background:var(--teal)}
+.mode-card small{font-size:12px;color:var(--ink-soft);line-height:1.4}
+.mode-icon{display:flex;gap:4px;font-family:var(--display);font-weight:900;font-size:22px;line-height:1;opacity:.85}
+.mode-icon span{border:3px solid var(--red);border-radius:8px;padding:4px 6px;background:#fff}
+.mode-icon span:nth-child(2){border-color:var(--teal)}
+.mode-icon.zy span{border-color:var(--teal);font-size:19px;padding:5px 7px}
+.mode-card{overflow:hidden}
+@media (max-width:340px){.mode-grid{grid-template-columns:1fr}}
+.quiz-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+/* 讀音題 */
+.ch.target{border:4px solid var(--ribbon);border-radius:10px;background:#fde8f2;color:var(--ribbon-deep)}
+.ch.target.good{border-color:var(--good);background:#dff4e6;color:var(--good)}
+.ch.target.bad{border-color:var(--red);background:#fde3e1;color:var(--red)}
+.opt.yin{font-size:clamp(26px,8vw,34px);width:auto;min-width:3em;height:1.9em;padding:0 .35em;letter-spacing:.02em;white-space:nowrap}
+.yin-tag{font-family:var(--display);font-size:14px;color:var(--ink-soft);margin-top:-2px}
+/* 首頁的兩種星星 */
+.home-stats{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%}
+.hs-box{border:2px dashed var(--red);border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;background:#fffafa}
+.hs-box.alt{border-color:var(--teal);background:#f6fbfb}
+.hs-box h3{margin:0;font-family:var(--display);font-size:15px;font-weight:900;color:var(--red)}
+.hs-box.alt h3{color:#2a7880}
+.hs-total{display:flex;align-items:center;gap:6px}
+.hs-total img{width:34px;height:32px;max-width:none}
+.hs-num{font-family:var(--display);font-weight:900;font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.hs-total span{color:var(--ink-soft);font-size:15px}
+.hs-kpi{margin:0;font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums;text-align:center}
+.hs-bars{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;align-items:end;height:40px;width:100%;max-width:150px;border-bottom:1.5px solid #b8c3b4}
+.hs-bars i{display:block;background:var(--star);border-radius:3px 3px 0 0;min-height:2px}
+.hs-bars i.last{background:var(--star-deep)}
+.hs-empty{font-size:12px;color:var(--ink-soft);height:40px;display:flex;align-items:center}
+@media (max-width:340px){.home-stats{grid-template-columns:1fr}}
+.hs-clear{margin-top:6px;font-size:12px;padding:4px 12px}
+/* 回首頁提醒 */
+.modal{position:fixed;inset:0;z-index:50;background:rgba(40,40,45,.45);display:flex;align-items:center;justify-content:center;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.modal-box{background:var(--card);border-radius:14px;padding:22px 20px;max-width:340px;width:100%;display:flex;flex-direction:column;gap:12px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.modal-box h3{margin:0;font-family:var(--display);font-size:20px}
+.modal-box p{margin:0;line-height:1.6}
+.modal-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.modal-btns .btn{font-size:17px;padding:10px 22px}
+/* 我的星星 */
+.stats{gap:12px}
+.total{display:flex;align-items:center;gap:10px}
+.total img{width:56px;height:54px}
+.total-num{font-family:var(--display);font-weight:900;font-size:52px;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink)}
+.total-unit{font-size:20px;margin-left:4px;color:var(--ink-soft)}
+.kpis{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;font-size:15px;color:var(--ink-soft)}
+.kpis b{font-family:var(--display);color:var(--ink);font-variant-numeric:tabular-nums}
+.wall{display:flex;flex-wrap:wrap;justify-content:center;gap:3px;max-width:340px;font-size:14px;color:var(--ink-soft);align-items:center}
+.wall img{width:22px;height:21px;max-width:none}
+.wall .more{font-family:var(--display);font-weight:700;color:var(--ink);margin-left:4px}
+.chart{width:100%;display:flex;flex-direction:column;gap:8px;padding-bottom:22px}
+.chart h3{margin:0;font-family:var(--display);font-size:15px;color:var(--ink)}
+.plot{display:grid;grid-template-columns:18px 1fr;gap:6px;margin-top:18px}
+.yaxis{position:relative;height:130px;font-size:11px;color:var(--ink-soft)}
+.yaxis span{position:absolute;right:0;transform:translateY(50%);line-height:1}
+.bars{
+  position:relative;height:130px;display:grid;grid-template-columns:repeat(10,1fr);gap:4px;align-items:end;
+  border-bottom:1.5px solid #b8c3b4;
+  background:repeating-linear-gradient(to top,transparent 0,transparent calc(20% - 1px),#e6ebe3 calc(20% - 1px),#e6ebe3 20%);
+}
+.col{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;cursor:default}
+.col .v{position:absolute;font-family:var(--display);font-size:12px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1}
+.col .bar{width:70%;max-width:24px;background:var(--star);border-radius:4px 4px 0 0;min-height:2px}
+.col.last .bar{background:var(--star-deep)}
+.col .x{position:absolute;bottom:-18px;font-size:11px;color:var(--ink-soft);white-space:nowrap}
+.col .tip{
+  position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);
+  background:var(--ink);color:#fff;font-size:12px;padding:4px 8px;border-radius:6px;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .12s;z-index:2
+}
+.col:hover .tip,.col:focus .tip{opacity:1}
+.col:focus{outline:2px dashed var(--ribbon);outline-offset:2px}
+.bars-gap{height:14px}
+.btn-ghost.small{font-size:13px;padding:5px 14px}
+.btn-ghost.danger{border-color:var(--red);color:var(--red)}
+.start-btns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.btn-alt{background:var(--teal);box-shadow:0 4px 0 #2a7880}
+.btn-alt:active{box-shadow:0 2px 0 #2a7880}
+.note{font-size:14px;color:var(--ink-soft)}
+.note.warn{color:var(--red)}
+.spinner{width:48px;height:48px;border-radius:50%;border:5px solid #f3d3e5;border-top-color:var(--ribbon);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.spinner{animation-duration:3s}}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--ribbon-deep)}
+.btn:focus-visible{outline:3px dashed var(--teal);outline-offset:4px}
+
+.stars{display:flex;gap:4px;justify-content:center;align-items:center;flex-wrap:nowrap}
+.stars img{width:clamp(44px,15vw,64px);height:clamp(42px,14.3vw,61px);max-width:none;flex:0 0 auto;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(0,0,0,.15))}
+.stars img.off{filter:grayscale(1) opacity(.28)}
+.stars img.pop{animation:pop .45s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pop{from{transform:scale(0) rotate(-40deg)}to{transform:scale(1) rotate(0)}}
+.big-score{font-family:var(--display);font-weight:900;font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+.big-score small{font-size:20px;color:var(--ink-soft);font-weight:700}
+.review{width:100%;text-align:left;display:flex;flex-direction:column;gap:6px}
+.review h3{margin:0;font-family:var(--display);font-size:16px}
+.review ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 12px}
+.review li{font-size:16px}
+.review li s{color:var(--red);margin-left:6px}
+.review li em{font-style:normal;color:var(--ink-soft);font-size:13px;margin-left:4px}
+.shake{animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media (prefers-reduced-motion: reduce){
+  .stars img.pop,.shake{animation:none}
+  .opt{transition:none}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <button class="mute" id="muteBtn" type="button" aria-pressed="false">♪ 聲音開</button>
+  <div class="ribbon"><h1>一字千金大考驗</h1></div>
+
+  <section class="card home" id="homeView">
+    <h2>選擇挑戰</h2>
+    <p>每回合 20 題、每題 5 秒，答對越多，拿到的星星越多！</p>
+    <p class="note" id="bankNote">題庫載入中…</p>
+    <div class="mode-grid">
+      <button class="mode-card" id="modeTypo" type="button">
+        <span class="mode-icon"><span>彼</span><span>比</span></span>
+        <b>錯別字挑戰</b><small>在空格選出正確的字</small>
+      </button>
+      <button class="mode-card alt" id="modeYin" type="button">
+        <span class="mode-icon zy"><span>ㄩㄝˋ</span></span>
+        <b>讀音大挑戰</b><small>替標示的字選出正確讀音</small>
+      </button>
+    </div>
+    <div class="home-stats">
+      <div class="hs-box" id="hsTypo">
+        <h3>錯別字挑戰的星星</h3>
+        <div class="hs-total"><img alt="" width="34" height="32" class="hs-img"><b class="hs-num">0</b><span>顆</span></div>
+        <p class="hs-kpi"></p>
+        <div class="hs-chart hs-bars" aria-hidden="true"></div>
+        <button class="btn-ghost small hs-clear" type="button">清除紀錄</button>
+      </div>
+      <div class="hs-box alt" id="hsYin">
+        <h3>讀音大挑戰的星星</h3>
+        <div class="hs-total"><img alt="" width="34" height="32" class="hs-img"><b class="hs-num">0</b><span>顆</span></div>
+        <p class="hs-kpi"></p>
+        <div class="hs-chart hs-bars" aria-hidden="true"></div>
+        <button class="btn-ghost small hs-clear" type="button">清除紀錄</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="startView" hidden>
+    <h2 id="modeTitle">錯別字挑戰</h2>
+    <ul class="rules">
+      <li>每回合隨機出 20 題</li>
+      <li id="ruleLine">每題 5 秒，選出正確的字</li>
+      <li>時間到沒作答，就算答錯並跳下一題</li>
+    </ul>
+    <div class="stars-legend" aria-label="星星計分方式">
+      <span>全對 20 題</span><span>★★★★★</span>
+      <span>16–19 題</span><span>★★★★</span>
+      <span>11–15 題</span><span>★★★</span>
+      <span>6–10 題</span><span>★★</span>
+      <span>1–5 題</span><span>★</span>
+    </div>
+    <div class="start-btns">
+      <button class="btn" id="startBtn" type="button">開始挑戰</button>
+    </div>
+    <p class="note" id="aiNote"></p>
+    <button class="btn-ghost small home-btn" type="button">⌂ 回到首頁</button>
+  </section>
+
+  <section class="card" id="loadView" hidden>
+    <h2>出題中…</h2>
+    <div class="spinner" aria-hidden="true"></div>
+    <p>正在準備 20 題新的錯別字題目，大約需要十幾秒到一分鐘。</p>
+    <button class="btn-ghost" id="cancelBtn" type="button">取消</button>
+  </section>
+
+  <section id="quizView" hidden>
+    <div class="status">
+      <div class="timer-label">倒數<b id="sec">5</b>秒</div>
+      <div class="bar"><i id="barFill"></i></div>
+      <div class="qno">題數<b id="qno">1</b></div>
+    </div>
+    <div class="score"><span class="ok">答對<b id="okCount">0</b></span><span class="ng">答錯<b id="ngCount">0</b></span></div>
+    <div class="word" id="word" aria-live="polite"></div>
+    <div class="hint" id="hint">請選出正確的字！</div>
+    <div class="quiz-btns">
+      <button class="btn-ghost" id="restartBtn" type="button">↻ 重新開始</button>
+      <button class="btn-ghost home-btn" type="button">⌂ 回到首頁</button>
+    </div>
+  </section>
+
+  <section class="card" id="endView" hidden>
+    <h2 id="endTitle">考試結束</h2>
+    <div class="stars" id="stars"></div>
+    <div class="big-score"><span id="finalOk">0</span><small> / 20 題答對</small></div>
+    <p id="endMsg"></p>
+    <div class="review" id="review"></div>
+    <button class="btn" id="againBtn" type="button">再考一次</button>
+    <button class="btn-ghost small home-btn" type="button">⌂ 回到首頁</button>
+  </section>
+
+  <section class="card stats" id="statsCard">
+    <h2>我的星星</h2>
+    <div class="total">
+      <img id="totalImg" alt="" width="56" height="54">
+      <div><span class="total-num" id="totalStars">0</span><span class="total-unit">顆</span></div>
+    </div>
+    <div class="kpis">
+      <span>已挑戰 <b id="roundCount">0</b> 回</span>
+      <span>最佳 <b id="bestStars">0</b> 顆星</span>
+      <span>平均 <b id="avgStars">0</b> 顆星</span>
+    </div>
+    <div class="wall" id="starWall" aria-label="累積的星星"></div>
+    <div class="chart" id="chartBox">
+      <h3>最近 10 回合獲得的星星</h3>
+      <div class="plot">
+        <div class="yaxis" aria-hidden="true"><span style="bottom:100%">5</span><span style="bottom:80%">4</span><span style="bottom:60%">3</span><span style="bottom:40%">2</span><span style="bottom:20%">1</span><span style="bottom:0">0</span></div>
+        <div class="bars" id="bars"></div>
+      </div>
+    </div>
+    <button class="btn-ghost small" id="clearBtn" type="button">清除紀錄</button>
+    <p class="note">紀錄存在這台裝置的瀏覽器裡，換裝置或清除瀏覽器資料就會重新計算。</p>
+  </section>
+</div>
+
+<div class="modal" id="homeModal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="homeModalTitle">
+    <h3 id="homeModalTitle">確定要離開這回合嗎？</h3>
+    <p>這回合還沒完成，回到首頁後這回合不會計分。累計的星星會保留。</p>
+    <div class="modal-btns">
+      <button class="btn-ghost" id="homeCancel" type="button">取消</button>
+      <button class="btn" id="homeOk" type="button">確定離開</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let PAIRS = ["應該/因該", "畢竟/必竟", "究竟/就竟", "內疚/內咎", "再一次/在一次", "已經/己經", "既然/即然", "佩服/配服", "而已/而以", "時候/時後", "必須/必需", "自己/自已", "成績/成積", "根本/跟本", "厲害/勵害", "知道/之道", "規劃/規畫", "需要/須要", "建議/建義", "導致/倒致", "觀察/關察", "尤其/猶其", "詢問/尋問", "部分/部份", "辯論/辨論", "辨別/辯別", "稍微/稍為", "浪費/浪廢", "煩躁/煩燥", "乾燥/乾躁", "急躁/急燥", "犀利/犀厲", "慰藉/慰籍", "書籍/書藉", "賠償/陪償", "陪伴/賠伴", "消遣/消譴", "譴責/遣責", "拔河/跋河", "跋涉/拔涉", "震撼/震憾", "遺憾/遺撼", "迷惘/迷網", "惆悵/綢悵", "憔悴/樵悴", "婉拒/惋拒", "惋惜/婉惜", "抉擇/決擇", "決定/絕定", "斟酌/甚酌", "修葺/修茸", "逐漸/遂漸", "姿勢/資勢", "愛戴/愛載", "盡頭/儘頭", "再見/在見", "炫耀/眩耀", "安裝/按裝", "按摩/安摩", "欣賞/欣嘗", "品嘗/品賞", "鼓勵/鼓厲", "勉勵/勉厲", "一鼓作氣/一股作氣", "再接再厲/再接再勵", "迫不及待/迫不急待", "按部就班/按步就班", "不脛而走/不徑而走", "金榜題名/金榜提名", "走投無路/走頭無路", "名列前茅/名列前矛", "矛盾/毛盾", "莫名其妙/莫明其妙", "談笑風生/談笑風聲", "墨守成規/默守成規", "世外桃源/世外桃園", "甘拜下風/甘敗下風", "好高騖遠/好高鶩遠", "一蹴可幾/一蹴可及", "迫在眉睫/迫在眉捷", "罄竹難書/磬竹難書", "不可思議/不可思意", "以身作則/以身做則", "循序漸進/循序漸近", "川流不息/穿流不息", "息息相關/習習相關", "嘔心瀝血/嘔心歷血", "美輪美奐/美崙美奐", "原形畢露/原型畢露", "變本加厲/變本加利", "出類拔萃/出類拔粹", "純粹/純萃", "文采斐然/文采蜚然", "緋聞/菲聞", "絕對/決對", "濫竽充數/爛竽充數", "鬼鬼祟祟/鬼鬼崇崇", "相形見絀/相形見拙", "委曲求全/委屈求全", "戰戰兢兢/戰戰競競", "心曠神怡/心礦神怡", "毛遂自薦/毛逐自薦", "優柔寡斷/憂柔寡斷", "不假思索/不加思索", "首屈一指/手屈一指", "維妙維肖/唯妙唯肖", "貽笑大方/遺笑大方", "既往不咎/既往不究", "防不勝防/防不慎防", "儘管/盡管", "洩密/瀉密", "貪婪/貪焚", "羨慕/羨幕", "曠野/礦野", "粗獷/粗曠", "陌生/佰生", "豁然開朗/霍然開朗", "豁達/闊達", "大放厥詞/大放闕詞", "作弊/作敝", "弊病/敝病", "憋氣/蹩氣", "撇清/瞥清", "瞥見/撇見", "遮蔽/遮敝", "敝帚自珍/弊帚自珍", "妄自菲薄/妄自非薄", "苟且/荀且", "戍守/戌守", "戌時/戍時", "肄業/肆業", "紈絝子弟/玩絝子弟", "黔驢技窮/黥驢技窮", "迄今/訖今", "放肆/放肄", "覺得/覺的", "趨炎附勢/驅炎附勢", "制伏/治伏"];
+const STAR_SRC = "data:image/png;base64,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";
+let YIN = [{"w": "跳「躍」", "a": "ㄩㄝˋ", "x": "ㄧㄠˋ"}, {"w": "賞「賜」", "a": "ㄙˋ", "x": "ㄘˋ"}, {"w": "味「噌」", "a": "ㄘㄥ", "x": "ㄗㄥ"}, {"w": "下「載」", "a": "ㄗㄞˋ", "x": "ㄗㄞˇ"}, {"w": "奶「酪」", "a": "ㄌㄨㄛˋ", "x": "ㄌㄠˋ"}, {"w": "厚「薄」", "a": "ㄅㄛˊ", "x": "ㄅㄠˊ"}, {"w": "妄自菲「薄」", "a": "ㄅㄛˊ", "x": "ㄅㄠˊ"}, {"w": "「逡」巡", "a": "ㄑㄩㄣ", "x": "ㄐㄩㄣˋ"}, {"w": "逸興「遄」飛", "a": "ㄔㄨㄢˊ", "x": "ㄉㄨㄢ"}, {"w": "「顓」頊", "a": "ㄓㄨㄢ", "x": "ㄔㄨㄢˊ"}, {"w": "「湍」急", "a": "ㄊㄨㄢ", "x": "ㄔㄨㄢˇ"}, {"w": "「驀」然回首", "a": "ㄇㄛˋ", "x": "ㄇㄨˋ"}, {"w": "「揶」揄", "a": "ㄧㄝˊ", "x": "ㄧㄝ"}, {"w": "揶「揄」", "a": "ㄩˊ", "x": "ㄩˋ"}, {"w": "坍「塌」", "a": "ㄊㄚ", "x": "ㄊㄚˋ"}, {"w": "「蛤」蜊", "a": "ㄍㄜˊ", "x": "ㄍㄜˇ"}, {"w": "蛤「蜊」", "a": "ㄌㄧˊ", "x": "ㄌㄧˋ"}, {"w": "「蝙」蝠", "a": "ㄅㄧㄢ", "x": "ㄅㄧㄢˇ"}, {"w": "吸「吮」", "a": "ㄕㄨㄣˇ", "x": "ㄩㄣˇ"}, {"w": "夢「魘」", "a": "ㄧㄢˇ", "x": "ㄧㄢˋ"}, {"w": "笑「靨」", "a": "ㄧㄝˋ", "x": "ㄧㄢˋ"}, {"w": "「癖」好", "a": "ㄆㄧˇ", "x": "ㄆㄧˋ"}, {"w": "粗「獷」", "a": "ㄍㄨㄤˇ", "x": "ㄎㄨㄤˋ"}, {"w": "「曠」達", "a": "ㄎㄨㄤˋ", "x": "ㄍㄨㄤˇ"}, {"w": "「阡」陌", "a": "ㄑㄧㄢ", "x": "ㄑㄧㄢˊ"}, {"w": "阡「陌」", "a": "ㄇㄛˋ", "x": "ㄅㄞˇ"}, {"w": "宮「闕」", "a": "ㄑㄩㄝˋ", "x": "ㄑㄩㄝ"}, {"w": "「韋」編三絕", "a": "ㄨㄟˊ", "x": "ㄨㄟˇ"}, {"w": "「韜」光養晦", "a": "ㄊㄠ", "x": "ㄉㄠˋ"}, {"w": "冒大不「韙」", "a": "ㄨㄟˇ", "x": "ㄨㄟˊ"}, {"w": "俯「瞰」", "a": "ㄎㄢˋ", "x": "ㄍㄢˇ"}, {"w": "「苟」活", "a": "ㄍㄡˇ", "x": "ㄍㄡˋ"}, {"w": "造「詣」", "a": "ㄧˋ", "x": "ㄓˇ"}, {"w": "「脂」肪", "a": "ㄓ", "x": "ㄓˇ"}, {"w": "「戍」守", "a": "ㄕㄨˋ", "x": "ㄒㄩ"}, {"w": "「戌」時", "a": "ㄒㄩ", "x": "ㄕㄨˋ"}, {"w": "「佚」名", "a": "ㄧˋ", "x": "ㄕ"}, {"w": "「軼」事", "a": "ㄧˋ", "x": "ㄕ"}, {"w": "「紈」褲子弟", "a": "ㄨㄢˊ", "x": "ㄨㄢˇ"}, {"w": "「黔」驢技窮", "a": "ㄑㄧㄢˊ", "x": "ㄐㄧㄣ"}, {"w": "「舳」艫千里", "a": "ㄓㄨˊ", "x": "ㄧㄡˊ"}, {"w": "「恫」瘝在抱", "a": "ㄊㄨㄥ", "x": "ㄉㄨㄥˋ"}, {"w": "恫「瘝」在抱", "a": "ㄍㄨㄢ", "x": "ㄏㄨㄢˋ"}, {"w": "「恫」嚇", "a": "ㄉㄨㄥˋ", "x": "ㄊㄨㄥ"}, {"w": "宵衣「旰」食", "a": "ㄍㄢˋ", "x": "ㄍㄢ"}, {"w": "「夙」夜匪懈", "a": "ㄙㄨˋ", "x": "ㄙㄨ"}, {"w": "星「宿」", "a": "ㄒㄧㄡˋ", "x": "ㄙㄨˋ"}, {"w": "灌「溉」", "a": "ㄍㄞˋ", "x": "ㄎㄞˋ"}, {"w": "感「慨」", "a": "ㄎㄞˇ", "x": "ㄎㄞˋ"}, {"w": "嘆「惋」", "a": "ㄨㄢˋ", "x": "ㄨㄢˇ"}, {"w": "手「腕」", "a": "ㄨㄢˋ", "x": "ㄨㄢˇ"}, {"w": "手「肘」", "a": "ㄓㄡˇ", "x": "ㄓㄡˊ"}, {"w": "「熾」熱", "a": "ㄔˋ", "x": "ㄓˋ"}, {"w": "求「籤」", "a": "ㄑㄧㄢ", "x": "ㄐㄧㄢ"}, {"w": "一語成「讖」", "a": "ㄔㄣˋ", "x": "ㄑㄧㄢ"}, {"w": "米「粟」", "a": "ㄙㄨˋ", "x": "ㄌㄧˋ"}, {"w": "「栗」子", "a": "ㄌㄧˋ", "x": "ㄙㄨˋ"}, {"w": "炊「爨」", "a": "ㄘㄨㄢˋ", "x": "ㄒㄧㄣˋ"}, {"w": "挑「釁」", "a": "ㄒㄧㄣˋ", "x": "ㄘㄨㄢˋ"}, {"w": "「饕」客", "a": "ㄊㄠ", "x": "ㄏㄠˋ"}, {"w": "冰「雹」", "a": "ㄅㄠˊ", "x": "ㄅㄠˋ"}, {"w": "「鮑」魚頭", "a": "ㄅㄠˋ", "x": "ㄅㄠ"}, {"w": "「刨」冰", "a": "ㄅㄠˋ", "x": "ㄆㄠˊ"}, {"w": "「庖」丁", "a": "ㄆㄠˊ", "x": "ㄅㄠ"}, {"w": "「刨」除", "a": "ㄆㄠˊ", "x": "ㄅㄠˋ"}, {"w": "面「皰」", "a": "ㄆㄠˋ", "x": "ㄅㄠ"}, {"w": "同「儕」", "a": "ㄔㄞˊ", "x": "ㄑㄧˊ"}, {"w": "不落「窠」臼", "a": "ㄎㄜ", "x": "ㄔㄠˊ"}, {"w": "「躋」身", "a": "ㄐㄧ", "x": "ㄑㄧˊ"}, {"w": "撐「篙」", "a": "ㄍㄠ", "x": "ㄍㄠˇ"}, {"w": "十字「鎬」", "a": "ㄍㄠˇ", "x": "ㄏㄠˋ"}, {"w": "「犒」賞", "a": "ㄎㄠˋ", "x": "ㄍㄠˇ"}, {"w": "茼「蒿」", "a": "ㄏㄠ", "x": "ㄍㄠ"}, {"w": "芫「荽」", "a": "ㄙㄨㄟ", "x": "ㄊㄨㄛˇ"}, {"w": "「冶」煉", "a": "ㄧㄝˇ", "x": "ㄓˋ"}, {"w": "白髮皤「皤」", "a": "ㄆㄛˊ", "x": "ㄈㄢ"}, {"w": "「幡」然醒悟", "a": "ㄈㄢ", "x": "ㄆㄢˊ"}, {"w": "「蟠」桃", "a": "ㄆㄢˊ", "x": "ㄈㄢ"}, {"w": "「逾」期", "a": "ㄩˊ", "x": "ㄩˋ"}, {"w": "「俄」羅斯", "a": "ㄜˊ", "x": "ㄜˋ"}, {"w": "文化「券」", "a": "ㄑㄩㄢˋ", "x": "ㄐㄩㄢˋ"}, {"w": "考「卷」", "a": "ㄐㄩㄢˋ", "x": "ㄑㄩㄢˋ"}, {"w": "荒「謬」", "a": "ㄇㄧㄡˋ", "x": "ㄇㄧㄠˋ"}, {"w": "未雨綢「繆」", "a": "ㄇㄡˊ", "x": "ㄌㄧㄠˇ"}, {"w": "橡皮擦「屑」", "a": "ㄒㄧㄝˋ", "x": "ㄒㄩㄝˋ"}, {"w": "不「屑」", "a": "ㄒㄧㄝˋ", "x": "ㄒㄩㄝˋ"}, {"w": "「酗」酒", "a": "ㄒㄩˋ", "x": "ㄒㄩㄥ"}, {"w": "囹「圄」", "a": "ㄩˇ", "x": "ㄨˊ"}, {"w": "針「砭」", "a": "ㄅㄧㄢ", "x": "ㄈㄚˊ"}, {"w": "「莘」莘學子", "a": "ㄕㄣ", "x": "ㄒㄧㄣ"}, {"w": "「棘」手", "a": "ㄐㄧˊ", "x": "ㄌㄚˋ"}, {"w": "「狙」擊", "a": "ㄐㄩ", "x": "ㄗㄨˇ"}, {"w": "「贗」品", "a": "ㄧㄢˋ", "x": "ㄧㄥ"}, {"w": "怙惡不「悛」", "a": "ㄑㄩㄢ", "x": "ㄐㄩㄣˋ"}, {"w": "瑕「疵」", "a": "ㄘ", "x": "ㄗ"}, {"w": "圭「臬」", "a": "ㄋㄧㄝˋ", "x": "ㄗˋ"}, {"w": "「鍥」而不捨", "a": "ㄑㄧㄝˋ", "x": "ㄑㄧˋ"}, {"w": "酩「酊」大醉", "a": "ㄉㄧㄥˇ", "x": "ㄉㄧㄥ"}, {"w": "「聒」噪", "a": "ㄍㄨㄚ", "x": "ㄍㄨㄛ"}, {"w": "「媲」美", "a": "ㄆㄧˋ", "x": "ㄆㄧㄣˋ"}, {"w": "「袒」護", "a": "ㄊㄢˇ", "x": "ㄉㄢˋ"}, {"w": "混「淆」", "a": "ㄧㄠˊ", "x": "ㄒㄧㄠˊ"}, {"w": "暴「殄」天物", "a": "ㄊㄧㄢˇ", "x": "ㄓㄣ"}, {"w": "汗流「浹」背", "a": "ㄐㄧㄚˊ", "x": "ㄐㄧㄚ"}, {"w": "轉「捩」點", "a": "ㄌㄧㄝˋ", "x": "ㄌㄟˋ"}, {"w": "蒹「葭」", "a": "ㄐㄧㄚ", "x": "ㄒㄧㄚˊ"}, {"w": "「膝」蓋", "a": "ㄒㄧ", "x": "ㄑㄧ"}, {"w": "肚「臍」", "a": "ㄑㄧˊ", "x": "ㄐㄧˊ"}, {"w": "牙「齦」", "a": "ㄧㄣˊ", "x": "ㄍㄣ"}, {"w": "眼「瞼」", "a": "ㄐㄧㄢˇ", "x": "ㄌㄧㄢˇ"}, {"w": "「咽」喉", "a": "ㄧㄢ", "x": "ㄧㄢˋ"}, {"w": "「脛」骨", "a": "ㄐㄧㄥˋ", "x": "ㄐㄧㄥ"}, {"w": "勾「芡」", "a": "ㄑㄧㄢˋ", "x": "ㄑㄧㄢ"}, {"w": "荸「薺」", "a": "ㄑㄧˊ", "x": "ㄐㄧˋ"}, {"w": "「炙」燒", "a": "ㄓˋ", "x": "ㄐㄧㄡˇ"}, {"w": "「鮪」魚", "a": "ㄨㄟˇ", "x": "ㄧㄡˋ"}, {"w": "「莧」菜", "a": "ㄒㄧㄢˋ", "x": "ㄐㄧㄢˋ"}, {"w": "烘「焙」", "a": "ㄅㄟˋ", "x": "ㄆㄟˊ"}, {"w": "「鯛」魚", "a": "ㄉㄧㄠ", "x": "ㄓㄡ"}, {"w": "「蒟」蒻", "a": "ㄐㄩˇ", "x": "ㄍㄡˇ"}, {"w": "妄自「菲」薄", "a": "ㄈㄟˇ", "x": "ㄈㄟ"}, {"w": "「緋」聞", "a": "ㄈㄟ", "x": "ㄈㄟˇ"}, {"w": "文采「斐」然", "a": "ㄈㄟˇ", "x": "ㄈㄟ"}];
+const TOTAL = 20, LIMIT = 5000, FEEDBACK = 900;
+let mode = "typo";   // typo：錯別字挑戰；yin：讀音大挑戰
+
+const $ = id => document.getElementById(id);
+const views = {home:$("homeView"), start:$("startView"), load:$("loadView"), quiz:$("quizView"), end:$("endView")};
+function show(name){
+  for (const k in views) views[k].hidden = (k !== name);
+  $("statsCard").hidden = !(name === "start" || name === "end");
+  window.scrollTo(0, 0);
+}
+
+function parsePair(p){
+  const [right, wrong] = p.split("/");
+  const a = [...right], b = [...wrong];
+  const pos = [];
+  a.forEach((c,i)=>{ if (c !== b[i]) pos.push(i); });
+  return {right, wrong, chars:a, pos, rc:a[pos[0]], wc:b[pos[0]]};
+}
+function parseYin(o){
+  const chars = [...o.w.replace(/[「」]/g, "")];
+  const pos = [...o.w].filter(c=>c !== "」").indexOf("「");
+  return {yin:true, mark:o.w, right:chars.join(""), wrong:o.x, chars, pos:[pos], rc:o.a, wc:o.x};
+}
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+let qs = [], idx = 0, ok = 0, ng = 0, missed = [], timer = null, t0 = 0, locked = false, nextT = null;
+
+function start(list){
+  cancelAnimationFrame(timer); clearTimeout(nextT);
+  qs = mode === "yin" ? shuffle(YIN).slice(0, TOTAL).map(parseYin) : (list || shuffle(PAIRS).slice(0, TOTAL)).map(parsePair);
+  idx = 0; ok = 0; ng = 0; missed = [];
+  $("okCount").textContent = 0; $("ngCount").textContent = 0;
+  show("quiz");
+  Sound.go();
+  render();
+}
+
+function render(){
+  locked = false;
+  const q = qs[idx];
+  $("qno").textContent = idx + 1;
+  const hint = $("hint"); hint.className = "hint"; hint.textContent = q.yin ? "請選出框起來那個字的正確讀音！" : "請選出正確的字！";
+
+  const word = $("word"); word.innerHTML = "";
+  if (q.yin){
+    q.chars.forEach((c,i)=>{
+      const d = document.createElement("div");
+      d.className = "ch" + (i === q.pos[0] ? " target" : ""); d.textContent = c;
+      word.appendChild(d);
+      if (i === q.pos[0]){
+        const row = document.createElement("div"); row.className = "options";
+        shuffle([q.rc, q.wc]).forEach(o=>{
+          const b = document.createElement("button");
+          b.type = "button"; b.className = "opt yin";
+          b.textContent = o; b.dataset.c = o;
+          b.addEventListener("click", ()=>answer(o));
+          row.appendChild(b);
+        });
+        word.appendChild(row);
+      }
+    });
+    startTimer();
+    return;
+  }
+  q.chars.forEach((c,i)=>{
+    if (i === q.pos[0]){
+      const row = document.createElement("div"); row.className = "options";
+      shuffle([q.rc, q.wc]).forEach(o=>{
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "opt";
+        b.textContent = o; b.dataset.c = o;
+        b.addEventListener("click", ()=>answer(o));
+        row.appendChild(b);
+      });
+      word.appendChild(row);
+    } else {
+      const d = document.createElement("div");
+      if (q.pos.includes(i)) d.className = "ch blank";
+      else { d.className = "ch"; d.textContent = c; }
+      word.appendChild(d);
+    }
+  });
+
+  startTimer();
+}
+
+function startTimer(){
+  cancelAnimationFrame(timer);
+  t0 = performance.now();
+  const fill = $("barFill"), sec = $("sec");
+  const tick = now=>{
+    const left = Math.max(0, LIMIT - (now - t0));
+    fill.style.transform = `scaleX(${left/LIMIT})`;
+    fill.style.background = left < 2000 ? "var(--red)" : "var(--bar)";
+    sec.textContent = Math.ceil(left/1000);
+    if (left <= 0){ answer(null); return; }
+    timer = requestAnimationFrame(tick);
+  };
+  timer = requestAnimationFrame(tick);
+}
+
+function answer(choice){
+  if (locked) return;
+  locked = true;
+  cancelAnimationFrame(timer);
+  const q = qs[idx];
+  const correct = choice === q.rc;
+  if (correct) ok++; else { ng++; missed.push({q, timeout: choice === null}); }
+  if (choice === null) Sound.timeout(); else if (correct) Sound.right(); else Sound.wrong();
+  $("okCount").textContent = ok; $("ngCount").textContent = ng;
+
+  document.querySelectorAll(".opt").forEach(b=>{
+    b.disabled = true;
+    if (b.dataset.c === q.rc) b.classList.add("right");
+    else if (b.dataset.c === choice) b.classList.add("wrong");
+  });
+  document.querySelectorAll(".ch.target").forEach(d=>d.classList.add(correct ? "good" : "bad"));
+  document.querySelectorAll(".ch.blank").forEach(d=>{
+    d.textContent = q.rc;
+    d.classList.add("filled", correct ? "good" : "bad");
+  });
+  const hint = $("hint");
+  if (correct){ hint.className = "hint good"; hint.textContent = "答對了！"; }
+  else {
+    hint.className = "hint bad";
+    hint.textContent = (choice === null ? "時間到！" : "答錯了！") + (q.yin ? "正確讀音是 " + q.rc : "正確是「" + q.right + "」");
+    $("word").classList.remove("shake"); void $("word").offsetWidth; $("word").classList.add("shake");
+  }
+
+  nextT = setTimeout(advance, correct ? FEEDBACK : FEEDBACK + 500);
+}
+function advance(){
+  idx++;
+  if (idx < qs.length) render(); else finish();
+}
+
+function starCount(n){ return n >= 20 ? 5 : n === 0 ? 0 : Math.ceil(n / 5); }
+
+function finish(){
+  show("end");
+  const s = starCount(ok);
+  Sound.bgmStop(); Sound.result(s);
+  const box = $("stars"); box.innerHTML = "";
+  for (let i=0;i<5;i++){
+    const img = document.createElement("img");
+    img.src = STAR_SRC; img.alt = i < s ? "星星" : "";
+    if (i < s){ img.className = "pop"; img.style.animationDelay = (i*0.15)+"s"; }
+    else img.className = "off";
+    box.appendChild(img);
+  }
+  $("finalOk").textContent = ok;
+  rounds.push({ s, ok, t: Date.now() });
+  saveRounds(rounds);
+  renderStats();
+  $("endTitle").textContent = `獲得 ${s} 顆星`;
+  const msgs = ["再接再厲，下次一定更好！","慢慢來，多看幾次就記得了。","有進步空間，加油！","不錯喔，離滿分不遠了。","很厲害，只差一點點！","太強了，國文小達人！"];
+  $("endMsg").textContent = msgs[s];
+
+  const rv = $("review"); rv.innerHTML = "";
+  if (missed.length){
+    const h = document.createElement("h3"); h.textContent = "這些要再記一下："; rv.appendChild(h);
+    const ul = document.createElement("ul");
+    missed.forEach(({q,timeout})=>{
+      const li = document.createElement("li");
+      li.textContent = q.yin ? q.mark + " " + q.rc : q.right;
+      const s2 = document.createElement("s"); s2.textContent = q.wrong; li.appendChild(s2);
+      if (timeout){ const e = document.createElement("em"); e.textContent = "超時"; li.appendChild(e); }
+      ul.appendChild(li);
+    });
+    rv.appendChild(ul);
+  }
+}
+
+/* ---------- AI 出題 ---------- */
+let sampleFn = null, aiCtl = null, lastMode = "bank";
+const usedAI = new Set();
+const HAN = /^[\u3400-\u9fff]+$/;
+const THEMES = ["形近字","同音字","四字成語","日常生活用語","學校與考試","情緒與心理","自然景物","動作與動詞","品德與人物","作文常用詞","新聞常見詞","部首相似的字"];
+
+function validPair(r, w){
+  if (typeof r !== "string" || typeof w !== "string") return false;
+  r = r.trim(); w = w.trim();
+  if (!HAN.test(r) || !HAN.test(w)) return false;
+  const a = [...r], b = [...w];
+  if (a.length !== b.length || a.length < 2 || a.length > 6) return false;
+  const d = a.map((c,i)=> c !== b[i] ? c + b[i] : null).filter(Boolean);
+  return d.length > 0 && new Set(d).size === 1;
+}
+
+function aiPrompt(){
+  const pick = shuffle(THEMES).slice(0, 2).join("、");
+  const avoid = [...usedAI].slice(-150).join("、") || "（無）";
+  return `你是台灣的高中國文老師。請出 32 組高中生容易寫錯的詞語題目，使用繁體中文，以教育部《重編國語辭典修訂本》為標準。
+規則：
+1. 每組有正確寫法 right 與常見的錯誤寫法 wrong，兩者字數相同，只有一個字不同（同一個字在詞中出現兩次也可，例如維妙維肖／唯妙唯肖）。
+2. wrong 必須是確實的錯字，不可以是教育部也接受的異體字或通用寫法；有爭議的不要出（例如規劃／規畫、偶爾／偶而）。
+3. wrong 不可以是另一個意思不同但正確的詞（例如權利／權力）。
+4. 混合二字詞、三字詞與四字成語，難度適合高中生，這次多出一些與「${pick}」相關的題目。
+5. 不要出這些已經出過的詞：${avoid}
+只回覆一個 JSON 陣列，不要其他文字，例如：[{"right":"迫不及待","wrong":"迫不急待"}]`;
+}
+
+function setNote(msg, warn){
+  const n = $("aiNote"); n.textContent = msg; n.className = "note" + (warn ? " warn" : "");
+}
+
+async function aiStart(){
+  if (!sampleFn) return;
+  lastMode = "ai";
+  show("load");
+  aiCtl = new AbortController();
+  try {
+    const data = await sampleFn.json(aiPrompt(), { signal: aiCtl.signal, cache: false });
+    const seen = new Set(), list = [];
+    (Array.isArray(data) ? data : []).forEach(o=>{
+      if (!o || !validPair(o.right, o.wrong)) return;
+      const r = o.right.trim(), w = o.wrong.trim();
+      if (seen.has(r) || usedAI.has(r)) return;
+      seen.add(r); list.push(r + "/" + w);
+    });
+    const bankN = 4 + Math.floor(Math.random() * 5);   // 每回合混入 4–8 題題庫題
+    const qsList = shuffle(list).slice(0, TOTAL - bankN);
+    qsList.forEach(p=>usedAI.add(p.split("/")[0]));
+    if (qsList.length < TOTAL){
+      const have = new Set(qsList.map(p=>p.split("/")[0]));
+      shuffle(PAIRS).filter(p=>!have.has(p.split("/")[0])).slice(0, TOTAL - qsList.length).forEach(p=>qsList.push(p));
+    }
+    setNote("");
+    start(shuffle(qsList));
+  } catch (e) {
+    const code = e && e.code;
+    if (code === "cancelled"){ show("start"); return; }
+    if (["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(code)){
+      sampleFn = null;
+    }
+    start();
+  }
+}
+
+try {
+  /* AI 出題已關閉：只用題庫 */
+} catch (e) {}
+
+$("cancelBtn").addEventListener("click", ()=>{ aiCtl?.abort(); show("start"); });
+$("startBtn").addEventListener("click", ()=>start());
+$("againBtn").addEventListener("click", ()=>start());
+$("restartBtn").addEventListener("click", ()=>{
+  cancelAnimationFrame(timer); clearTimeout(nextT); locked = true;
+  Sound.bgmStop();
+  show("start");
+});
+/* ---------- 音樂與音效（Web Audio 即時合成，無外部音檔） ---------- */
+const Sound = (()=>{
+  let ctx = null, master, bgm, sfx, noiseBuf, loopId = null, step = 0, nextTime = 0, muted = false;
+  // iPhone 靜音模式下 Web Audio 會被消音：先播一段無聲音檔，把聲音切到「媒體播放」通道
+  const SILENT = "data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==";
+  let keepAlive = null;
+  function unlockIOS(){
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
+    if (keepAlive) { keepAlive.play().catch(()=>{}); return; }
+    try {
+      keepAlive = new Audio(SILENT);
+      keepAlive.loop = true;
+      keepAlive.setAttribute("playsinline", "");
+      keepAlive.play().catch(()=>{});
+    } catch (e) {}
+  }
+  try { muted = localStorage.getItem("yzqj-muted") === "1"; } catch (e) {}
+  const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+
+  function init(){
+    unlockIOS();
+    if (!ctx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return false;
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = muted ? 0 : 1; master.connect(ctx.destination);
+      bgm = ctx.createGain(); bgm.gain.value = 0.2; bgm.connect(master);
+      sfx = ctx.createGain(); sfx.gain.value = 0.55; sfx.connect(master);
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      try { const src = ctx.createBufferSource(); src.buffer = ctx.createBuffer(1, 1, 22050); src.connect(ctx.destination); src.start(0); } catch (e) {}
+    }
+    if (ctx.state === "suspended") ctx.resume();
+    return true;
+  }
+  function tone(m, t, dur, o = {}){
+    const { type = "square", vol = 0.3, dest = sfx, slide = 0, attack = 0.005 } = o;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(hz(m), t);
+    if (slide) osc.frequency.exponentialRampToValueAtTime(hz(m + slide), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g); g.connect(dest);
+    osc.start(t); osc.stop(t + dur + 0.05);
+  }
+  function noise(t, dur, vol, hp, dest){
+    const s = ctx.createBufferSource(); s.buffer = noiseBuf;
+    const f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = hp;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(dest);
+    s.start(t); s.stop(t + dur + 0.02);
+  }
+  function kick(t){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+    g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    o.connect(g); g.connect(bgm); o.start(t); o.stop(t + 0.2);
+  }
+
+  // PK 對戰曲：150 BPM，A 小調 Am–F–G–E，8 小節循環
+  const S16 = 60 / 150 / 4;
+  const CHORDS = [[57,60,64],[53,57,60],[55,59,62],[52,56,59]];
+  const ROOTS = [45, 41, 43, 40];
+  const LEAD = [76,null,74,76, null,79,null,76, 74,null,72,74, null,71,null,72];
+  function schedule(s, t){
+    const bar = Math.floor(s / 16) % 8, i = s % 16, c = Math.floor(bar / 2);
+    if (i % 4 === 0) kick(t);
+    if (i === 4 || i === 12) noise(t, 0.14, 0.35, 1500, bgm);
+    if (i % 2 === 0) noise(t, 0.04, i % 4 === 2 ? 0.16 : 0.08, 7000, bgm);
+    if (i % 2 === 0) tone(ROOTS[c] + (i % 4 === 2 ? 12 : 0), t, S16 * 1.7, { type: "square", vol: 0.12, dest: bgm });
+    tone(CHORDS[c][[0,1,2,1][i % 4]] + 12, t, S16 * 0.9, { type: "square", vol: 0.045, dest: bgm });
+    if (bar >= 4 && LEAD[i] !== null) tone(LEAD[i] - (c === 3 ? 1 : 0), t, S16 * 1.6, { type: "triangle", vol: 0.2, dest: bgm });
+  }
+  function bgmStart(delay){
+    if (!init()) return;
+    bgmStop();
+    step = 0; nextTime = ctx.currentTime + (delay || 0.05);
+    loopId = setInterval(()=>{
+      while (nextTime < ctx.currentTime + 0.15){ schedule(step, nextTime); nextTime += S16; step++; }
+    }, 25);
+  }
+  function bgmStop(){ if (loopId){ clearInterval(loopId); loopId = null; } }
+
+  // 開始：上行開場號角，接著進入對戰曲
+  function go(){
+    if (!init()) return;
+    const t = ctx.currentTime + 0.02;
+    [60,64,67].forEach((m, k)=>tone(m, t + k * 0.08, 0.12, { vol: 0.25 }));
+    tone(72, t + 0.24, 0.45, { vol: 0.28 }); tone(76, t + 0.24, 0.45, { vol: 0.18 }); tone(79, t + 0.24, 0.45, { vol: 0.14 });
+    noise(t + 0.24, 0.3, 0.25, 4000, sfx);
+    bgmStart(0.75);
+  }
+  // 時間到：低音蜂鳴器兩聲
+  function timeout(){
+    if (!init()) return;
+    const t = ctx.currentTime + 0.01;
+    [0, 0.22].forEach(d=>{
+      tone(45, t + d, 0.18, { type: "sawtooth", vol: 0.22 });
+      tone(46, t + d, 0.18, { type: "sawtooth", vol: 0.18 });
+    });
+  }
+  // 答對：清亮的「叮咚」兩音
+  function right(){
+    if (!init()) return;
+    const t = ctx.currentTime + 0.01;
+    tone(84, t, 0.12, { type: "square", vol: 0.16 });
+    tone(91, t + 0.08, 0.3, { type: "square", vol: 0.16 });
+    tone(103, t + 0.08, 0.2, { type: "sine", vol: 0.08 });
+  }
+  // 答錯：下滑的「噮」
+  function wrong(){
+    if (!init()) return;
+    const t = ctx.currentTime + 0.01;
+    tone(58, t, 0.32, { type: "sawtooth", vol: 0.2, slide: -7 });
+    tone(51, t, 0.32, { type: "square", vol: 0.1, slide: -7 });
+  }
+  // 結算：每顆星一聲叮，再依星數播不同結尾
+  function result(s){
+    if (!init()) return;
+    const t = ctx.currentTime + 0.05;
+    const chime = [76, 79, 83, 86, 88];
+    for (let i = 0; i < s; i++){
+      tone(chime[i], t + i * 0.15, 0.35, { type: "triangle", vol: 0.3 });
+      tone(chime[i] + 12, t + i * 0.15, 0.2, { type: "sine", vol: 0.12 });
+    }
+    const e = t + s * 0.15 + 0.2;
+    if (s === 0){
+      [55, 54, 53].forEach((m, k)=>tone(m, e + k * 0.32, 0.3, { type: "sawtooth", vol: 0.16 }));
+      tone(52, e + 0.96, 0.9, { type: "sawtooth", vol: 0.16, slide: -1 });
+    } else if (s === 1){
+      tone(67, e, 0.25, { type: "triangle", vol: 0.25 }); tone(64, e + 0.25, 0.5, { type: "triangle", vol: 0.25 });
+    } else if (s === 2){
+      tone(64, e, 0.18, { type: "triangle", vol: 0.25 }); tone(67, e + 0.18, 0.18, { type: "triangle", vol: 0.25 });
+      tone(72, e + 0.36, 0.5, { type: "triangle", vol: 0.25 });
+    } else if (s === 3){
+      [60, 64, 67, 72].forEach((m, k)=>tone(m, e + k * 0.11, 0.3, { vol: 0.2 }));
+      tone(76, e + 0.44, 0.6, { vol: 0.2 });
+    } else if (s === 4){
+      [60, 64, 67, 72, 76].forEach((m, k)=>tone(m, e + k * 0.09, 0.25, { vol: 0.2 }));
+      [72, 76, 79].forEach(m=>tone(m, e + 0.5, 0.9, { vol: 0.15 }));
+      noise(e + 0.5, 0.4, 0.2, 5000, sfx);
+    } else {
+      [67, 67, 67].forEach((m, k)=>tone(m, e + k * 0.13, 0.11, { vol: 0.25 }));
+      [72, 76, 79, 84].forEach(m=>tone(m, e + 0.42, 1.3, { vol: 0.14 }));
+      tone(48, e + 0.42, 1.3, { type: "triangle", vol: 0.3 });
+      for (let k = 0; k < 10; k++) tone(84 + Math.floor(Math.random() * 12), e + 0.5 + k * 0.08, 0.15, { type: "sine", vol: 0.1 });
+      noise(e + 0.42, 0.6, 0.25, 6000, sfx);
+    }
+  }
+  function setMuted(v){
+    muted = v;
+    try { localStorage.setItem("yzqj-muted", v ? "1" : "0"); } catch (e) {}
+    if (ctx) master.gain.setTargetAtTime(v ? 0 : 1, ctx.currentTime, 0.02);
+  }
+  return { go, timeout, right, wrong, result, bgmStop, setMuted, isMuted: ()=>muted };
+})();
+
+function paintMute(){
+  const b = $("muteBtn"), m = Sound.isMuted();
+  b.textContent = m ? "♪ 聲音關" : "♪ 聲音開";
+  b.setAttribute("aria-pressed", String(m));
+}
+$("muteBtn").addEventListener("click", ()=>{ Sound.setMuted(!Sound.isMuted()); paintMute(); });
+paintMute();
+
+/* ---------- 累積星星 ---------- */
+function renderStats(){
+  const total = rounds.reduce((a, r)=>a + (r.s || 0), 0);
+  $("totalImg").src = STAR_SRC;
+  $("totalStars").textContent = total;
+  $("roundCount").textContent = rounds.length;
+  $("bestStars").textContent = rounds.length ? Math.max(...rounds.map(r=>r.s || 0)) : 0;
+  $("avgStars").textContent = rounds.length ? (total / rounds.length).toFixed(1) : 0;
+
+  const wall = $("starWall"); wall.innerHTML = "";
+  if (!total){
+    wall.textContent = "還沒有星星，完成一回合就能開始收集！";
+  } else {
+    const MAX = 60, n = Math.min(total, MAX);
+    for (let i = 0; i < n; i++){
+      const img = document.createElement("img"); img.src = STAR_SRC; img.alt = ""; wall.appendChild(img);
+    }
+    if (total > MAX){ const m = document.createElement("span"); m.className = "more"; m.textContent = "+" + (total - MAX); wall.appendChild(m); }
+  }
+
+  const box = $("chartBox"), bars = $("bars");
+  box.hidden = rounds.length === 0;
+  bars.innerHTML = "";
+  const start = Math.max(0, rounds.length - 10);
+  rounds.slice(start).forEach((r, i, arr)=>{
+    const no = start + i + 1;
+    const col = document.createElement("div");
+    col.className = "col" + (i === arr.length - 1 ? " last" : "");
+    col.tabIndex = 0;
+    col.setAttribute("aria-label", `第 ${no} 回：${r.s} 顆星，答對 ${r.ok} 題`);
+    const tip = document.createElement("span"); tip.className = "tip"; tip.textContent = `第 ${no} 回｜答對 ${r.ok} 題`;
+    const v = document.createElement("span"); v.className = "v"; v.textContent = r.s;
+    const bar = document.createElement("span"); bar.className = "bar"; bar.style.height = `${r.s * 20}%`; v.style.bottom = `calc(${r.s * 20}% + 3px)`;
+    const x = document.createElement("span"); x.className = "x"; x.textContent = no;
+    col.append(tip, v, bar, x);
+    bars.appendChild(col);
+  });
+}
+
+const STORES = { typo: "yzqj-stars-v1", yin: "yzqj-yin-v1" };
+const storeKey = ()=>STORES[mode];
+function loadRounds(){
+  try { const d = JSON.parse(localStorage.getItem(storeKey()) || "[]"); return Array.isArray(d) ? d : []; }
+  catch (e) { return []; }
+}
+function saveRounds(r){
+  try { localStorage.setItem(storeKey(), JSON.stringify(r.slice(-500))); } catch (e) {}
+}
+let rounds = loadRounds();
+
+let clearArmed = null;
+$("clearBtn").addEventListener("click", ()=>{
+  const b = $("clearBtn");
+  if (!clearArmed){
+    b.textContent = "確定要清除嗎？再按一次"; b.classList.add("danger");
+    clearArmed = setTimeout(()=>{ clearArmed = null; b.textContent = "清除紀錄"; b.classList.remove("danger"); }, 4000);
+    return;
+  }
+  clearTimeout(clearArmed); clearArmed = null;
+  rounds = []; saveRounds(rounds); renderStats();
+  b.textContent = "清除紀錄"; b.classList.remove("danger");
+});
+
+/* ---------- 首頁與模式切換 ---------- */
+function openMode(m){
+  mode = m;
+  $("modeTitle").textContent = m === "yin" ? "讀音大挑戰" : "錯別字挑戰";
+  $("ruleLine").textContent = m === "yin" ? "每題 5 秒，替框起來的字選出正確讀音" : "每題 5 秒，選出正確的字";
+  rounds = loadRounds();
+  renderStats();
+  show("start");
+}
+$("modeTypo").addEventListener("click", ()=>openMode("typo"));
+$("modeYin").addEventListener("click", ()=>openMode("yin"));
+
+function renderHomeStats(){
+  [["typo","hsTypo"],["yin","hsYin"]].forEach(([m, id])=>{
+    let r = [];
+    try { const d = JSON.parse(localStorage.getItem(STORES[m]) || "[]"); if (Array.isArray(d)) r = d; } catch (e) {}
+    const box = $(id), total = r.reduce((a, x)=>a + (x.s || 0), 0);
+    box.querySelector(".hs-img").src = STAR_SRC;
+    box.querySelector(".hs-num").textContent = total;
+    box.querySelector(".hs-kpi").textContent = r.length
+      ? `已挑戰 ${r.length} 回・最佳 ${Math.max(...r.map(x=>x.s || 0))} 顆`
+      : "還沒挑戰過";
+    const bars = box.querySelector(".hs-chart"); bars.innerHTML = "";
+    const recent = r.slice(-10);
+    bars.className = "hs-chart " + (recent.length ? "hs-bars" : "hs-empty");
+    if (!recent.length) bars.textContent = "完成一回合就會出現長條圖";
+    recent.forEach((x, i)=>{
+      const b = document.createElement("i");
+      b.style.height = `${(x.s || 0) * 20}%`;
+      if (i === recent.length - 1) b.className = "last";
+      bars.appendChild(b);
+    });
+  });
+}
+[["typo","hsTypo"],["yin","hsYin"]].forEach(([m, id])=>{
+  const b = $(id).querySelector(".hs-clear");
+  let armed = null;
+  b.addEventListener("click", ()=>{
+    if (!armed){
+      b.textContent = "再按一次清除"; b.classList.add("danger");
+      armed = setTimeout(()=>{ armed = null; b.textContent = "清除紀錄"; b.classList.remove("danger"); }, 4000);
+      return;
+    }
+    clearTimeout(armed); armed = null;
+    try { localStorage.removeItem(STORES[m]); } catch (e) {}
+    if (mode === m) rounds = [];
+    b.textContent = "清除紀錄"; b.classList.remove("danger");
+    renderHomeStats();
+  });
+});
+function goHome(){
+  cancelAnimationFrame(timer); clearTimeout(nextT); locked = true;
+  Sound.bgmStop();
+  renderHomeStats();
+  show("home");
+}
+let pausedFromQuiz = false;
+function openHomeModal(){
+  if (views.quiz.hidden){ goHome(); return; }
+  pausedFromQuiz = true;
+  cancelAnimationFrame(timer); clearTimeout(nextT);
+  $("homeModal").hidden = false;
+  $("homeCancel").focus();
+}
+function closeHomeModal(){ $("homeModal").hidden = true; }
+document.querySelectorAll(".home-btn").forEach(b=>b.addEventListener("click", openHomeModal));
+$("homeCancel").addEventListener("click", ()=>{
+  closeHomeModal();
+  if (pausedFromQuiz){ if (!locked) startTimer(); else nextT = setTimeout(advance, 400); }
+});
+$("homeOk").addEventListener("click", ()=>{ closeHomeModal(); goHome(); });
+document.addEventListener("keydown", e=>{ if (e.key === "Escape" && !$("homeModal").hidden) $("homeCancel").click(); });
+
+/* ---------- 從 Google 試算表讀題庫（失敗時用內建題庫） ---------- */
+const SHEET_ID = "1ycn0eT_bwgn9nWR4U0ih0mN1KLYhah2HN9kE8SGZDiE";
+const sheetUrl = name => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(name)}`;
+function parseCSV(t){
+  const rows = []; let row = [], f = "", q = false;
+  for (let i = 0; i < t.length; i++){
+    const c = t[i];
+    if (q){
+      if (c === '"'){ if (t[i + 1] === '"'){ f += '"'; i++; } else q = false; }
+      else f += c;
+    } else if (c === '"') q = true;
+    else if (c === ","){ row.push(f); f = ""; }
+    else if (c === "\n" || c === "\r"){
+      if (c === "\r" && t[i + 1] === "\n") i++;
+      row.push(f); rows.push(row); row = []; f = "";
+    } else f += c;
+  }
+  if (f !== "" || row.length){ row.push(f); rows.push(row); }
+  return rows.map(r=>r.map(x=>x.trim()));
+}
+const YIN_RE = /^[\u3400-\u9fff]*「[\u3400-\u9fff]」[\u3400-\u9fff]*$/;
+function setBankNote(src){
+  $("bankNote").textContent = `題庫：${src}（錯別字 ${PAIRS.length} 組、讀音 ${YIN.length} 題）`;
+}
+async function loadSheets(){
+  const ctl = new AbortController();
+  const timer = setTimeout(()=>ctl.abort(), 8000);
+  const get = name => fetch(sheetUrl(name), { signal: ctl.signal, cache: "no-store" })
+    .then(r=>r.ok ? r.text() : Promise.reject(new Error("HTTP " + r.status)));
+  try {
+    const [tTypo, tYin] = await Promise.all([get("錯別字"), get("讀音")]);
+    const typo = [], seen = new Set();
+    parseCSV(tTypo).forEach(r=>{
+      const a = (r[0] || "").replace(/\s/g, ""), b = (r[1] || "").replace(/\s/g, "");
+      if (validPair(a, b) && !seen.has(a)){ seen.add(a); typo.push(a + "/" + b); }
+    });
+    const yin = [], seenY = new Set();
+    parseCSV(tYin).forEach(r=>{
+      const w = (r[0] || "").replace(/\s/g, ""), a = (r[1] || "").replace(/\s/g, ""), x = (r[2] || "").replace(/\s/g, "");
+      if (YIN_RE.test(w) && a && x && a !== x && !seenY.has(w)){ seenY.add(w); yin.push({ w, a, x }); }
+    });
+    if (typo.length >= TOTAL) PAIRS = typo;
+    if (yin.length >= TOTAL) YIN = yin;
+    setBankNote(typo.length >= TOTAL && yin.length >= TOTAL ? "雲端試算表" : "部分使用內建題庫");
+  } catch (e) {
+    setBankNote("內建");
+  } finally {
+    clearTimeout(timer);
+  }
+}
+loadSheets();
+
+renderStats();
+renderHomeStats();
+show("home");
+</script>
+
+</body>
+</html>
