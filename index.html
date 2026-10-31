@@ -1005,7 +1005,7 @@ async function loadSheets(){
     const typo = [], seen = new Set();
     parseCSV(tTypo).forEach(r=>{
       const a = (r[0] || "").replace(/\s/g, ""), b = (r[1] || "").replace(/\s/g, "");
-      if (validPair(a, b) && !seen.has(a)){ seen.add(a); typo.push(a + "/" + b); }
+      if (validPair(a, b) && !seen.has(a + "/" + b)){ seen.add(a + "/" + b); typo.push(a + "/" + b); }
     });
     const yin = [], seenY = new Set();
     parseCSV(tYin).forEach(r=>{
